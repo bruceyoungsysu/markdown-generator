@@ -74,47 +74,61 @@ class TextParser(Parser):
 
 
 class Rules: #Rules applied to each block of text.
-    def __init__(self,handler):
+    def __init__(self,handler,blocks):
         self.type = ''
         self.handler = handler
         self.condition = []
-    '''    
-    def apply(self,blocks):
-        self.handler.start(self.type)
-        self.handler.end(self.type)
+        self.blocks = blocks
+    def apply_sub(self,condition,self.blocks):
+        for block in self.blocks:
+            self.handler.sub(condition,block)
+    def add_condition(self,cond):
+        self.condition.append(cond)
+       
+    def apply(self,start_block,end_block,self.blocks):
+        self.handler.start(self.type,start_block)
+        self.handler.end(self.type,end_block)
         for condition in self.condition:
-            self.handler.sub(self,condition,blocks)
-   '''
+            self.apply_sub(condition,self.blocks)
+   
    
 class file_rules(Rules):#apply each handler to each corresponding blocks.Rule is a detector.
-        
-    def apply(self,blocks):
-        blocks[0]=self.handler.start_file() + blocks[0]
-        blocks[-1]=block[-1] + self.handler.start_file()
-        
+    def __init__(self,handler,blocks):
+        Rules.__init__(self,handler,blocks)
+        self.start_block = self.blocks[0]
+        self.end_block = self.blocks[-1]
           
 class title_rules(Rules):
-        
-    def apply(self,blocks):
+    def __init__(self,handler,blocks):
+        Rules.__init__(self,handler,blocks)
+        self.start_block = self.title_block(blocks)
+        self.end_block = self.title_block(blocks)
+    def title_match(self,blocks):
         for block in blocks:
             if re.match('t|Tiltle:',block):
-                block = self.handler.start_title() + block + self.handler.end_title()
-                break
+                return block
             
 class body_rules(Rules):
-    def __init__(self,handler):
-        Rules.__init__(self,handler)
-        #self.type = ''
+    def __init__(self,handler,blocks):
+        Rules.__init__(self,handler,blocks)
+        self.type = 'body'
         self.condition = []
+        self.start_block = self.body_match(self.blocks)
+        self.end_block = self.blocks[-1]
         
-    def apply(self,blocks):
+    def body_match(self,blocks):
+        block = blocks.next()
+        while not re.match('t|Title:',block):
+            block = blocks.next()
+        block = blocks.next()
+        return block
         
 class url_rules(Rules):
     def __init__(self,handler):
         Rules.__init__(self,handler)
-        self.condition = []
+        #self.condition = ['url']
+        self.type = 'url'
         
-    def apply(self, blocks):
 
 class Handler(): #how to handle each section.
     def callfuction(self,preflix,name,*args):
@@ -143,10 +157,12 @@ class HTML_handler(Handler):
         yield '<body>'
     def end_body(self):
         yield '</body>'
-    def sub_url(self,item,block):
+    def sub_url(self,block):
         pattern = 'http:\\www.[0-9a-zA-Z]+.com'
         for item in re.finditer(pattern,block):
             if item != None:
                 repl = '<a herf = %s></a>' %item
                 re.sub(item,repl,string)
-        
+
+def __main__():
+    

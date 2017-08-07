@@ -6,7 +6,6 @@ Created on Tue Jul 25 17:40:04 2017
 """
 
 import argparse
-import os
 import re
 
 def CommandParser():
@@ -30,7 +29,7 @@ def FileParser(file_path): #parse a txt file to blocks.
     parse the txt file to seperate blocks. Each block is like a paragraph.
     returns : generator of blocks
     '''
-    f = os.open(file_path,'r')
+    f = open(file_path,'r')
     lines = f.readlines()
     f.close()
     block = []
@@ -54,7 +53,7 @@ class Parser: #Parse each setting and rule to each block
                        
 class SettingParser(Parser):
     def ParseSetting(self,blocks):
-        for block in blocks:
+        #for block in blocks:
             #match content with re module.
         pass
         
@@ -63,11 +62,11 @@ class TextParser(Parser):
         Parser.__init__(self)
         self.handler = handler
         
-    def ParseText(self,blocks):
+    def ParseText(self):
         for rule in self.rules:
-            rule.apply(blocks)
+            rule.apply()
         for setting in self.settings:
-            setting.apply(blocks)
+            setting.apply()
                 
     def Gen_file(self,blocks):
         pass
@@ -79,15 +78,15 @@ class Rules: #Rules applied to each block of text.
         self.handler = handler
         self.condition = []
         self.blocks = blocks
-    def apply_sub(self,condition,self.blocks):
+    def apply_sub(self,condition):
         for block in self.blocks:
             self.handler.sub(condition,block)
     def add_condition(self,cond):
         self.condition.append(cond)
        
-    def apply(self,start_block,end_block,self.blocks):
-        self.handler.start(self.type,start_block)
-        self.handler.end(self.type,end_block)
+    def apply(self):
+        self.handler.start(self.type,self.start_block)
+        self.handler.end(self.type,self.end_block)
         for condition in self.condition:
             self.apply_sub(condition,self.blocks)
    
@@ -133,7 +132,7 @@ class url_rules(Rules):
 class Handler(): #how to handle each section.
     def callfuction(self,preflix,name,*args):
         method = getattr(self,preflix+name,None)
-        if callable(method):return method(*args):
+        if callable(method):return method(*args)
             
     def start(self,name):
         self.callfuction('start_',name)
@@ -164,5 +163,18 @@ class HTML_handler(Handler):
                 repl = '<a herf = %s></a>' %item
                 re.sub(item,repl,string)
 
-def __main__():
+def main():
+    #file_path = CommandParser()
+    file_path = "./test.txt"
+    g=FileParser(file_path)
+    handler = HTML_handler
+
+    filerules = file_rules(handler,g) 
+    parser = TextParser(handler)
+    parser.AddRule(filerules)
+    
+    
+    
+if __name__ == '__main__':
+    main()
     

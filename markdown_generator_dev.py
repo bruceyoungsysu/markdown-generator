@@ -90,7 +90,8 @@ class Rules: #Rules applied to each block of text.
         self.condition.append(cond)
        
     def apply(self):
-        self.handler.start(self.type,self.start_block)
+        print self.handler.start(self.type,self.start_block)
+        
         self.handler.end(self.type,self.end_block)
         for condition in self.condition:
             self.apply_sub(condition,self.blocks)
@@ -142,7 +143,7 @@ class Handler(): #how to handle each section.
             
     def start(self,name,block):
         block = self.callfuction('start_',name,block)
-        print block
+        return block
         
     def end(self,name,block):
         block = self.callfuction('end_',name,block)
@@ -151,8 +152,7 @@ class Handler(): #how to handle each section.
         block = self.callfuction('sub_',name,block)
         
 class HTML_handler(Handler):
-    def start_file(self,block):
-        print block        
+    def start_file(self,block):        
         return '<html>'+block
     def end_file(self,block):
         return block + '</html>'

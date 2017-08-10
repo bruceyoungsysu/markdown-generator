@@ -7,6 +7,7 @@ Created on Tue Jul 25 17:40:04 2017
 
 import argparse
 import re
+import os
 
 def CommandParser():
     '''
@@ -19,7 +20,7 @@ def CommandParser():
     
     txt_path = args.file_path
     
-    if not existspath(txt_path):
+    if not os.existspath(txt_path):
         raise UserWarning('Please input a valid path!') # distingush between file and folder?
         
     return txt_path
@@ -33,11 +34,13 @@ def FileParser(file_path): #parse a txt file to blocks.
     lines = f.readlines()
     f.close()
     block = []
+    blocks = []
     for line in lines:
         if line.strip():
             block.append(line)
         elif block:
-            yield ''.join(block)
+            blocks.append(''.join(block))
+    return blocks
    
    
    
@@ -68,8 +71,10 @@ class TextParser(Parser):
         for setting in self.settings:
             setting.apply()
                 
-    def Gen_file(self,blocks):
-        pass
+    def Gen_file(self):
+        for rule in self.rules:
+            rule.apply()
+        
 
 
 class Rules: #Rules applied to each block of text.
@@ -94,6 +99,7 @@ class Rules: #Rules applied to each block of text.
 class file_rules(Rules):#apply each handler to each corresponding blocks.Rule is a detector.
     def __init__(self,handler,blocks):
         Rules.__init__(self,handler,blocks)
+        self.type = 'file'
         self.start_block = self.blocks[0]
         self.end_block = self.blocks[-1]
           
@@ -134,45 +140,47 @@ class Handler(): #how to handle each section.
         method = getattr(self,preflix+name,None)
         if callable(method):return method(*args)
             
-    def start(self,name):
-        self.callfuction('start_',name)
+    def start(self,name,block):
+        block = self.callfuction('start_',name,block)
+        print block
         
-    def end(self,name):
-        self.callfuction('end_',name)
+    def end(self,name,block):
+        block = self.callfuction('end_',name,block)
         
     def sub(self,name,pattern,block):
-        self.callfuction('sub_',name,item,block)
+        block = self.callfuction('sub_',name,block)
         
 class HTML_handler(Handler):
-    def start_file(self):
-        yield '<html>'
-    def end_file(self):
-        yield '</html>'
-    def start_title(self):
-        yield '<head><title>'
-    def end_title(self):
-        yield '</title></head>'
-    def start_body(self):
-        yield '<body>'
-    def end_body(self):
-        yield '</body>'
+    def start_file(self,block):
+        print block        
+        return '<html>'+block
+    def end_file(self,block):
+        return block + '</html>'
+    def start_title(self,block):
+        return '<head><title>' +block
+    def end_title(self,block):
+        return block + '</title></head>'
+    def start_body(self,block):
+        return '<body>'+block
+    def end_body(self,block):
+        return block + '</body>'
     def sub_url(self,block):
         pattern = 'http:\\www.[0-9a-zA-Z]+.com'
         for item in re.finditer(pattern,block):
             if item != None:
                 repl = '<a herf = %s></a>' %item
-                re.sub(item,repl,string)
+                re.sub(item,repl,block)
 
 def main():
     #file_path = CommandParser()
     file_path = "./test.txt"
     g=FileParser(file_path)
-    handler = HTML_handler
-
+    handler = HTML_handler()
     filerules = file_rules(handler,g) 
     parser = TextParser(handler)
     parser.AddRule(filerules)
-    
+    parser.Gen_file()
+    print g
     
     
 if __name__ == '__main__':

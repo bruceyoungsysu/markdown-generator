@@ -71,10 +71,10 @@ class TextParser(Parser):
         for setting in self.settings:
             setting.apply()
                 
-    def Gen_file(self):
+    def Gen_file(self,blocks):
         for rule in self.rules:
-            rule.apply()
-        
+            blocks = rule.apply(blocks)
+        return blocks
 
 
 class Rules: #Rules applied to each block of text.
@@ -83,36 +83,51 @@ class Rules: #Rules applied to each block of text.
         self.handler = handler
         self.condition = []
         self.blocks = blocks
+        
     def apply_sub(self,condition):
         for block in self.blocks:
             self.handler.sub(condition,block)
     def add_condition(self,cond):
         self.condition.append(cond)
        
-    def apply(self):
-        print self.handler.start(self.type,self.start_block)
+    def apply(self,blocks):
+               
+        new_start = self.handler.start(self.type,blocks[self.start_num])
+        new_end = self.handler.end(self.type,blocks[self.end_num])        
+        repl = []
+        for item in blocks:
+            if item  == blocks[self.start_num]:
+                repl.append(new_start)
+            elif item == blocks[self.end_num]:
+                repl.append(new_end)
+            else: 
+                repl.append(item)
         
-        self.handler.end(self.type,self.end_block)
         for condition in self.condition:
-            self.apply_sub(condition,self.blocks)
-   
+            for block in blocks:
+                self.apply_sub(condition,block)
+        blocks = repl
+        
+        return blocks
+
    
 class file_rules(Rules):#apply each handler to each corresponding blocks.Rule is a detector.
     def __init__(self,handler,blocks):
         Rules.__init__(self,handler,blocks)
         self.type = 'file'
-        self.start_block = self.blocks[0]
-        self.end_block = self.blocks[-1]
+        self.start_num = 0
+        self.end_num = -1
           
 class title_rules(Rules):
     def __init__(self,handler,blocks):
         Rules.__init__(self,handler,blocks)
-        self.start_block = self.title_block(blocks)
-        self.end_block = self.title_block(blocks)
+        self.start_num = self.title_match(blocks)
+        self.end_num = self.title_match(blocks)
+        self.type = 'title'
     def title_match(self,blocks):
         for block in blocks:
             if re.match('t|Tiltle:',block):
-                return block
+                return blocks.index(block)
             
 class body_rules(Rules):
     def __init__(self,handler,blocks):
@@ -120,18 +135,16 @@ class body_rules(Rules):
         self.type = 'body'
         self.condition = []
         self.start_block = self.body_match(self.blocks)
-        self.end_block = self.blocks[-1]
+        self.end_num = -1
         
     def body_match(self,blocks):
-        block = blocks.next()
-        while not re.match('t|Title:',block):
-            block = blocks.next()
-        block = blocks.next()
-        return block
+        for block in blocks:
+            while re.match('t|Title:',block):
+                return blocks.index(block) + 1
         
 class url_rules(Rules):
-    def __init__(self,handler):
-        Rules.__init__(self,handler)
+    def __init__(self,handler,blocks):
+        Rules.__init__(self,handler,blocks)
         #self.condition = ['url']
         self.type = 'url'
         
@@ -142,11 +155,11 @@ class Handler(): #how to handle each section.
         if callable(method):return method(*args)
             
     def start(self,name,block):
-        block = self.callfuction('start_',name,block)
-        return block
+        return self.callfuction('start_',name,block)
+        
         
     def end(self,name,block):
-        block = self.callfuction('end_',name,block)
+        return self.callfuction('end_',name,block)
         
     def sub(self,name,pattern,block):
         block = self.callfuction('sub_',name,block)
@@ -154,6 +167,7 @@ class Handler(): #how to handle each section.
 class HTML_handler(Handler):
     def start_file(self,block):        
         return '<html>'+block
+        
     def end_file(self,block):
         return block + '</html>'
     def start_title(self,block):
@@ -176,10 +190,20 @@ def main():
     file_path = "./test.txt"
     g=FileParser(file_path)
     handler = HTML_handler()
-    filerules = file_rules(handler,g) 
     parser = TextParser(handler)
+    candi = []
+    for typename in candi:
+        method = typename + '_rules'        
+        if callable(method):
+            typename + 'rules' = method(handler,g)
+            parser.AddRule()
+    filerules = file_rules(handler,g)
+    titlerules = title_rules(handler,g)
+
     parser.AddRule(filerules)
-    parser.Gen_file()
+    parser.AddRule(titlerules)
+    
+    print parser.Gen_file(g)
     print g
     
     

@@ -5,45 +5,12 @@ Created on Tue Jul 25 17:40:04 2017
 @author: bruyang
 """
 
-import argparse
+#import argparse
 import re
-import os
+#import os
+import utils
 
-def CommandParser():
-    '''
-    Parse the user input command especially txt file path.
-    returns : txt file path.
-    '''
-    parser = argparse.ArgumentParser(discription = 'Please input a valid TxT file for conversion.')
-    parser.add_argument('file_path',type = str)
-    args = parser.parse_args()
-    
-    txt_path = args.file_path
-    
-    if not os.existspath(txt_path):
-        raise UserWarning('Please input a valid path!') # distingush between file and folder?
-        
-    return txt_path
-
-def FileParser(file_path): #parse a txt file to blocks.
-    '''
-    parse the txt file to seperate blocks. Each block is like a paragraph.
-    returns : generator of blocks
-    '''
-    f = open(file_path,'r')
-    lines = f.readlines()
-    f.close()
-    block = []
-    blocks = []
-    for line in lines:
-        if line.strip():
-            block.append(line)
-        elif block:
-            blocks.append(''.join(block))
-    return blocks
-   
-   
-   
+       
 class Parser: #Parse each setting and rule to each block
     def __init__(self):
         self.rules = []
@@ -65,15 +32,17 @@ class TextParser(Parser):
         Parser.__init__(self)
         self.handler = handler
         
-    def ParseText(self):
+    def ParseText(self,blocks):
         for rule in self.rules:
-            rule.apply()
+            blocks = rule.apply(blocks)
         for setting in self.settings:
             setting.apply()
-                
+        return blocks
+         
     def Gen_file(self,blocks):
         for rule in self.rules:
             blocks = rule.apply(blocks)
+            
         return blocks
 
 
@@ -81,7 +50,7 @@ class Rules: #Rules applied to each block of text.
     def __init__(self,handler,blocks):
         self.type = ''
         self.handler = handler
-        self.condition = []
+        self.condition = ['url']
         self.blocks = blocks
         
     def apply_sub(self,condition):
@@ -91,22 +60,26 @@ class Rules: #Rules applied to each block of text.
         self.condition.append(cond)
        
     def apply(self,blocks):
-               
-        new_start = self.handler.start(self.type,blocks[self.start_num])
-        new_end = self.handler.end(self.type,blocks[self.end_num])        
-        repl = []
-        for item in blocks:
-            if item  == blocks[self.start_num]:
-                repl.append(new_start)
-            elif item == blocks[self.end_num]:
-                repl.append(new_end)
-            else: 
-                repl.append(item)
-        
-        for condition in self.condition:
-            for block in blocks:
-                self.apply_sub(condition,block)
-        blocks = repl
+        if self.type not in self.condition:       
+            new_start = self.handler.start(self.type,blocks[self.start_num])
+            new_end = self.handler.end(self.type,blocks[self.end_num])        
+        #repl = blocks
+            for item in blocks:
+
+                if item  == blocks[self.start_num]:
+                #repl.append(new_start)
+                    blocks.insert(self.start_num,new_start)
+                    blocks.remove(item)
+                
+                if item == blocks[self.end_num]:
+                #repl.append(new_end)
+                    blocks.insert(-1,new_end)
+                    blocks.remove(item)
+        else:
+            for condition in self.condition:
+                for block in blocks:
+                    self.handler.sub(condition,block)
+        #blocks = repl
         
         return blocks
 
@@ -134,7 +107,7 @@ class body_rules(Rules):
         Rules.__init__(self,handler,blocks)
         self.type = 'body'
         self.condition = []
-        self.start_block = self.body_match(self.blocks)
+        self.start_num = self.body_match(self.blocks)
         self.end_num = -1
         
     def body_match(self,blocks):
@@ -147,6 +120,9 @@ class url_rules(Rules):
         Rules.__init__(self,handler,blocks)
         #self.condition = ['url']
         self.type = 'url'
+
+class br_rules(Rules):
+    pass
         
 
 class Handler(): #how to handle each section.
@@ -161,7 +137,7 @@ class Handler(): #how to handle each section.
     def end(self,name,block):
         return self.callfuction('end_',name,block)
         
-    def sub(self,name,pattern,block):
+    def sub(self,name,block):
         block = self.callfuction('sub_',name,block)
         
 class HTML_handler(Handler):
@@ -171,9 +147,8 @@ class HTML_handler(Handler):
     def end_file(self,block):
         return block + '</html>'
     def start_title(self,block):
-        return '<head><title>' +block
-    def end_title(self,block):
-        return block + '</title></head>'
+        return '<head><title>' +block +'</title></head>'
+
     def start_body(self,block):
         return '<body>'+block
     def end_body(self,block):
@@ -184,27 +159,34 @@ class HTML_handler(Handler):
             if item != None:
                 repl = '<a herf = %s></a>' %item
                 re.sub(item,repl,block)
-
+'''
+def HTML_sort(in_list):
+    out_list = []
+    if 'body' in  in_list:
+        in_list.pop('body')
+        out_list.append('body')
+'''        
+        
 def main():
     #file_path = CommandParser()
     file_path = "./test.txt"
-    g=FileParser(file_path)
+    g=utils.FileParser(file_path)
+    
     handler = HTML_handler()
     parser = TextParser(handler)
-    candi = []
+    candi = ['url','title','body','file']
     for typename in candi:
-        method = typename + '_rules'        
-        if callable(method):
-            typename + 'rules' = method(handler,g)
-            parser.AddRule()
-    filerules = file_rules(handler,g)
-    titlerules = title_rules(handler,g)
-
-    parser.AddRule(filerules)
-    parser.AddRule(titlerules)
+        new_rule = eval(typename+'_rules')
+        #if issubclass(new_rule,Rules):
+        if callable(new_rule):
+            rule  = new_rule(handler,g)
+            parser.AddRule(rule)
+        
     
-    print parser.Gen_file(g)
+    g = parser.Gen_file(g)
     print g
+    utils.Create_file(file_path,g)
+    #print g
     
     
 if __name__ == '__main__':

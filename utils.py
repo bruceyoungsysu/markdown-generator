@@ -51,4 +51,13 @@ def Create_file(file_path,blocks):
     f = open(html_path,'w')
     f.writelines(blocks)
     f.close()
-        
+    
+def replace_block(new_block,block,blocks):
+    '''replace the old block to new block in blocks'''
+    try :
+        block_index = blocks.index(block)
+        blocks.insert(block_index,new_block)
+        blocks.remove(block)
+    except:
+        print 'error'
+    

@@ -29,19 +29,28 @@ def FileParser(file_path): #parse a txt file to blocks.
     parse the txt file to seperate blocks. Each block is like a paragraph.
     returns : generator of blocks
     '''
+    f2 = open(file_path,'a')
+    f2.write('\n\n')
+    f2.close()
     f = open(file_path,'r')
     lines = f.readlines()
+
     f.close()
     block = []
     blocks = []
     for line in lines:
-        if line.strip():
+        
+        if line.rstrip():
             block.append(line)
+            
         elif block:
             blocks.append(''.join(block))
+            print blocks
             block = []
+            
     if lines[-1].strip():
         blocks.append(lines[-1])
+    
     return blocks
 
 def Create_file(file_path,blocks):
@@ -60,4 +69,5 @@ def replace_block(new_block,block,blocks):
         blocks.remove(block)
     except:
         print 'error'
+
     

@@ -50,7 +50,7 @@ class Rules: #Rules applied to each block of text.
     def __init__(self,handler,blocks):
         self.type = ''
         self.handler = handler
-        self.condition = ['url']
+        self.condition = ['quote','url','br','head','code']
         self.blocks = blocks
         
     def apply_sub(self,condition):
@@ -109,7 +109,6 @@ class body_rules(Rules):
 class url_rules(Rules):
     def __init__(self,handler,blocks):
         Rules.__init__(self,handler,blocks)
-        #self.condition = ['url']
         self.type = 'url'
 
 class br_rules(Rules):
@@ -117,6 +116,21 @@ class br_rules(Rules):
         Rules.__init__(self,handler,blocks)
         self.type = 'br'
         
+class head_rules(Rules):
+    def __init__(self,handler,blocks):
+        Rules.__init__(self,handler,blocks)
+        self.type = 'head'
+
+class code_rules(Rules):
+    def __init__(self,handler,blocks):
+        Rules.__init__(self,handler,blocks)
+        self.type = 'code'
+        
+class quote_rules(Rules):
+    def __init__(self,handler,blocks):
+        Rules.__init__(self,handler,blocks)
+        self.type = 'quote'
+ 
 
 class Handler(): #how to handle each section.
     def callfuction(self,preflix,name,*args):
@@ -152,6 +166,17 @@ class HTML_handler(Handler):
 
     def end_body(self,block):
         return block + '</body>'
+        
+    def sub_code(self,block):
+        pattern = r'    |\t'
+        
+        for item in re.findall(pattern,block):
+            if item != None:
+                repl = '<pre>'
+                repl_1 = '</pre>'
+                block = block.replace(item,repl) + repl_1
+        return block
+                
 
     def sub_url(self,block):
         pattern = r'www.[0-9a-zA-Z]+.com'
@@ -165,12 +190,34 @@ class HTML_handler(Handler):
 
     def sub_br(self,block):
         pattern = r'\n'
-        print pattern
-        for item in re.finditer(pattern,block):
-
+        for item in re.findall(pattern,block):
             if item != None:
-                repl = '<br>' %item
-                re.sub(item,repl,block)
+                repl = '<br>'
+                block = block.replace(item,repl)
+        return block
+
+    def sub_head(self,block):
+        pattern = '[#]{1,6}'
+        for item in re.findall(pattern,block):
+            if item != None:
+                repl = '<h%s>' %(len(item))
+                repl_1 = '</h%s>' %(len(item))
+                block = block.replace(item,repl) + repl_1
+        return block
+        
+    def sub_quote(self,block):
+        pattern = r'>>'
+        
+        for item in re.findall(pattern,block):
+            if item != None:
+                #if '<blockquote>' not in block:
+                repl = '<blockquote>'
+                #else: 
+                #    repl = ''
+                repl_1 = '</blockquote>'
+                block = block.replace(item,repl)
+        return block
+
 '''
 def HTML_sort(in_list):
     out_list = []
@@ -186,7 +233,7 @@ def main():
     
     handler = HTML_handler()
     parser = TextParser(handler)
-    candi = ['url','title','body','file']
+    candi = ['quote','code','head','br','url','title','body','file']
     #candi = ['url','file']
     for typename in candi:
         new_rule = eval(typename+'_rules')

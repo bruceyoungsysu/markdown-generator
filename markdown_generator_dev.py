@@ -50,7 +50,7 @@ class Rules: #Rules applied to each block of text.
     def __init__(self,handler,blocks):
         self.type = ''
         self.handler = handler
-        self.condition = ['quote','url','br','head','code']
+        self.condition = ['list','quote','url','br','head','code']
         self.blocks = blocks
         
     def apply_sub(self,condition):
@@ -130,6 +130,11 @@ class quote_rules(Rules):
     def __init__(self,handler,blocks):
         Rules.__init__(self,handler,blocks)
         self.type = 'quote'
+        
+class list_rules(Rules):
+    def __init__(self,handler,blocks):
+        Rules.__init__(self,handler,blocks)
+        self.type = 'list'
  
 
 class Handler(): #how to handle each section.
@@ -236,7 +241,7 @@ class HTML_handler(Handler):
         '''
         start_pattern = '<ol>/n<li>'
         end_pattern = '</li>\n</ol>'
-        normal_pattern = r'-'
+        normal_pattern = '^/-'
         new_pattern = '<li></li>'
         new_block = utils.replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block)
         return new_block
@@ -257,7 +262,7 @@ def main():
     
     handler = HTML_handler()
     parser = TextParser(handler)
-    candi = ['quote','code','head','br','url','title','body','file']
+    candi = ['list','quote','code','head','br','url','title','body','file']
     #candi = ['url','file']
     for typename in candi:
         new_rule = eval(typename+'_rules')

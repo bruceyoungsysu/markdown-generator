@@ -79,26 +79,27 @@ def replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block):
     def replace_start(start_pattern,normal_pattern,lines):
         Tag = 'True'
         count = 0
-        while Tag:
+        print lines
+        while Tag and count< len(lines)-1:
             if  re.match(normal_pattern,lines[count]):
                 Tag = 'False'
                 lines[count].replace(normal_pattern,start_pattern)
                 break
             else:
-                count +=1
-                continue
+                count += 1
+                    
         return lines
     def replace_end(end_pattern,normal_pattern,lines):
         Tag = 'True'
         count = -1
-        while Tag:
+        while Tag and abs(count)< len(lines):
             if  re.match(normal_pattern,lines[count]):
                 Tag = 'False'
                 lines[count].replace(normal_pattern,end_pattern)
                 break
             else:
                 count -= 1
-                continue
+                
         return lines
         
     def replace_normal(new_pattern,normal_pattern,lines):
@@ -109,5 +110,5 @@ def replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block):
     lines = replace_start(start_pattern,normal_pattern,lines)
     lines = replace_end(end_pattern,normal_pattern,lines)
     lines= replace_normal(new_pattern,normal_pattern,lines)
-    new_block.append(lines.join(r'\n'))    
+    new_block.append(lines[:].join(r'\n'))    
     return new_block

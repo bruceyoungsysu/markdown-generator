@@ -210,13 +210,37 @@ class HTML_handler(Handler):
         
         for item in re.findall(pattern,block):
             if item != None:
-                #if '<blockquote>' not in block:
-                repl = '<blockquote>'
-                #else: 
-                #    repl = ''
+                if '<blockquote>' not in block:
+                    repl = '<blockquote>'
+                else:
+                    repl = ''
+                print repl
+                block = block.replace(item,repl,1)
                 repl_1 = '</blockquote>'
-                block = block.replace(item,repl)
+                if '</blockquote>' not in block:                
+                    block += repl_1
         return block
+        
+    def sub_list(self,block):
+        '''
+        for line in block.split(r'\n'):
+            Tag = 'True'
+            if re.match('^/-'):
+                if Tag == 'True':
+                    line.replace('^/-','<ol>/n<li>')
+                    line += '</li>'
+                    Tag = 'False'
+                else:
+                    line.replace('^/-','<li>')
+                    line += '</li>'
+        '''
+        start_pattern = '<ol>/n<li>'
+        end_pattern = '</li>\n</ol>'
+        normal_pattern = r'-'
+        new_pattern = '<li></li>'
+        new_block = utils.replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block)
+        return new_block
+        
 
 '''
 def HTML_sort(in_list):

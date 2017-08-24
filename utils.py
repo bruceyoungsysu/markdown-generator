@@ -7,6 +7,7 @@ Created on Tue Jul 25 17:40:04 2017
 
 import argparse
 import os
+import re
 
 def CommandParser():
     '''
@@ -45,7 +46,6 @@ def FileParser(file_path): #parse a txt file to blocks.
             
         elif block:
             blocks.append(''.join(block))
-            print blocks
             block = []
             
     if lines[-1].strip():
@@ -70,4 +70,44 @@ def replace_block(new_block,block,blocks):
     except:
         print 'error'
 
-    
+def replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block):
+    '''replace the special patterns different from head and end like quote, code block, etc
+    input: the start pattern in html, the end pattern in html, the major pattern in the middle of block
+    output: new block with all marks replaced by html tags    
+    '''
+    lines = block.split(r'\n')
+    def replace_start(start_pattern,normal_pattern,lines):
+        Tag = 'True'
+        count = 0
+        while Tag:
+            if  re.match(normal_pattern,lines[count]):
+                Tag = 'False'
+                lines[count].replace(normal_pattern,start_pattern)
+                break
+            else:
+                count +=1
+                continue
+        return lines
+    def replace_end(end_pattern,normal_pattern,lines):
+        Tag = 'True'
+        count = -1
+        while Tag:
+            if  re.match(normal_pattern,lines[count]):
+                Tag = 'False'
+                lines[count].replace(normal_pattern,end_pattern)
+                break
+            else:
+                count -= 1
+                continue
+        return lines
+        
+    def replace_normal(new_pattern,normal_pattern,lines):
+        for line in lines:
+            re.sub(normal_pattern,new_pattern,line)
+            return lines
+    new_block = []
+    lines = replace_start(start_pattern,normal_pattern,lines)
+    lines = replace_end(end_pattern,normal_pattern,lines)
+    lines= replace_normal(new_pattern,normal_pattern,lines)
+    new_block.append(lines.join(r'\n'))    
+    return new_block

@@ -211,21 +211,27 @@ class HTML_handler(Handler):
         return block
         
     def sub_quote(self,block):
-        pattern = r'>>'
-        
+        normal_pattern = r'>>'
+        start_pattern = '<blockquote>'
+        end_pattern = '</blockquote>'
+        new_pattern = '<br>'
+        #print [block]
+        new_block = utils.replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block)
+        return new_block
+        '''
         for item in re.findall(pattern,block):
             if item != None:
                 if '<blockquote>' not in block:
                     repl = '<blockquote>'
                 else:
                     repl = ''
-                print repl
+                #print repl
                 block = block.replace(item,repl,1)
                 repl_1 = '</blockquote>'
                 if '</blockquote>' not in block:                
                     block += repl_1
         return block
-        
+        '''
     def sub_list(self,block):
         '''
         for line in block.split(r'\n'):
@@ -239,10 +245,10 @@ class HTML_handler(Handler):
                     line.replace('^/-','<li>')
                     line += '</li>'
         '''
-        start_pattern = '<ol>/n<li>'
-        end_pattern = '</li>\n</ol>'
-        normal_pattern = '^/-'
-        new_pattern = '<li></li>'
+        start_pattern = '<ol><li>'
+        end_pattern = '</li></ol>'
+        normal_pattern = '-'
+        new_pattern = '</li><br><li>'
         new_block = utils.replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block)
         return new_block
         

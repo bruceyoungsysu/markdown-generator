@@ -31,7 +31,7 @@ def FileParser(file_path): #parse a txt file to blocks.
     returns : generator of blocks
     '''
     f2 = open(file_path,'a')
-    f2.write('\n\n')
+    f2.write('\n')
     f2.close()
     f = open(file_path,'r')
     lines = f.readlines()
@@ -42,6 +42,7 @@ def FileParser(file_path): #parse a txt file to blocks.
     for line in lines:
         
         if line.rstrip():
+            line = line
             block.append(line)
             
         elif block:
@@ -75,27 +76,29 @@ def replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block):
     input: the start pattern in html, the end pattern in html, the major pattern in the middle of block
     output: new block with all marks replaced by html tags    
     '''
-    lines = block.split(r'\n')
+    lines = block.split('\n')
+    #print len(lines)
+    #print lines
     def replace_start(start_pattern,normal_pattern,lines):
         Tag = 'True'
         count = 0
-        print lines
-        while Tag and count< len(lines)-1:
+        
+        while Tag and count< len(lines):
             if  re.match(normal_pattern,lines[count]):
                 Tag = 'False'
-                lines[count].replace(normal_pattern,start_pattern)
+                lines[count] = re.sub(normal_pattern,start_pattern,lines[count],1)
                 break
             else:
-                count += 1
-                    
+                count += 1      
         return lines
-    def replace_end(end_pattern,normal_pattern,lines):
+        
+    def replace_end(end_pattern,normal_pattern,new_pattern,lines):
         Tag = 'True'
         count = -1
-        while Tag and abs(count)< len(lines):
-            if  re.match(normal_pattern,lines[count]):
+        while Tag and abs(count)<= len(lines):
+            if  re.match(normal_pattern,lines[count]) or len(lines) == 1:
                 Tag = 'False'
-                lines[count].replace(normal_pattern,end_pattern)
+                lines[count] = lines[count].replace(normal_pattern,new_pattern)+ end_pattern
                 break
             else:
                 count -= 1
@@ -103,12 +106,18 @@ def replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block):
         return lines
         
     def replace_normal(new_pattern,normal_pattern,lines):
+        new_lines = []
         for line in lines:
-            re.sub(normal_pattern,new_pattern,line)
-            return lines
-    new_block = []
+            if re.match(normal_pattern,line):
+                line = re.sub(normal_pattern,new_pattern,line)
+            new_lines.append(line)
+        return new_lines
+    print len(lines)
+    print lines
     lines = replace_start(start_pattern,normal_pattern,lines)
-    lines = replace_end(end_pattern,normal_pattern,lines)
+
+    lines = replace_end(end_pattern,normal_pattern,new_pattern,lines)
+
     lines= replace_normal(new_pattern,normal_pattern,lines)
-    new_block.append(lines[:].join(r'\n'))    
-    return new_block
+    
+    return ''.join(lines)

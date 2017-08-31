@@ -13,6 +13,7 @@ def CommandParser():
     '''
     Parse the user input command especially txt file path.
     returns : txt file path.
+    Currently only works in Linux
     '''
     parser = argparse.ArgumentParser(discription = 'Please input a valid TxT file for conversion.')
     parser.add_argument('file_path',type = str)
@@ -28,7 +29,8 @@ def CommandParser():
 def FileParser(file_path): #parse a txt file to blocks.
     '''
     parse the txt file to seperate blocks. Each block is like a paragraph.
-    returns : generator of blocks
+    input: file path    
+    returns : blocks
     '''
     f2 = open(file_path,'a')
     f2.write('\n')
@@ -55,6 +57,11 @@ def FileParser(file_path): #parse a txt file to blocks.
     return blocks
 
 def Create_file(file_path,blocks):
+    ''''
+    Create the html file after convet.
+    input: output file path and generated blocks.
+    output: html file.
+    ''''
     dir_path,file_name=os.path.split(file_path)
     # detect the system used?
     html_path=dir_path+r'\new.html'
@@ -63,18 +70,26 @@ def Create_file(file_path,blocks):
     f.close()
     
 def replace_block(new_block,block,blocks):
-    '''replace the old block to new block in blocks'''
+    '''
+    replace the old block to new block in blocks
+    input: blocks before replacement, block in blocks need to be replaced, new block to replace block.
+    output: blocks afeter replacement    
+    '''
     try :
         block_index = blocks.index(block)
         blocks.insert(block_index,new_block)
         blocks.remove(block)
     except:
-        print 'error'
+        return 'error'
 
 def replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block):
     '''replace the special patterns different from head and end like quote, code block, etc
     input: the start pattern in html, the end pattern in html, the major pattern in the middle of block
-    output: new block with all marks replaced by html tags    
+    output: new block with all marks replaced by html tags
+    methods:
+    replace_start : replace the start of whole block for special tag
+    replace_end : replace the end of whole block for special tag
+    replace_normal : replace the other markers with universal tag    
     '''
     lines = block.split('\n')
     #print len(lines)
@@ -112,8 +127,8 @@ def replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block):
                 line = re.sub(normal_pattern,new_pattern,line)
             new_lines.append(line)
         return new_lines
-    print len(lines)
-    print lines
+    #print len(lines)
+    #print lines
     lines = replace_start(start_pattern,normal_pattern,lines)
 
     lines = replace_end(end_pattern,normal_pattern,new_pattern,lines)

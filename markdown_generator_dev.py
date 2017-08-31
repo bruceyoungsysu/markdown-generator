@@ -9,7 +9,6 @@ Created on Tue Jul 25 17:40:04 2017
 import re
 #import os
 import utils
-
        
 class Parser: #Parse each setting and rule to each block
     def __init__(self):
@@ -218,72 +217,38 @@ class HTML_handler(Handler):
         #print [block]
         new_block = utils.replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block)
         return new_block
-        '''
-        for item in re.findall(pattern,block):
-            if item != None:
-                if '<blockquote>' not in block:
-                    repl = '<blockquote>'
-                else:
-                    repl = ''
-                #print repl
-                block = block.replace(item,repl,1)
-                repl_1 = '</blockquote>'
-                if '</blockquote>' not in block:                
-                    block += repl_1
-        return block
-        '''
+
     def sub_list(self,block):
-        '''
-        for line in block.split(r'\n'):
-            Tag = 'True'
-            if re.match('^/-'):
-                if Tag == 'True':
-                    line.replace('^/-','<ol>/n<li>')
-                    line += '</li>'
-                    Tag = 'False'
-                else:
-                    line.replace('^/-','<li>')
-                    line += '</li>'
-        '''
+
         start_pattern = '<ol><li>'
         end_pattern = '</li></ol>'
         normal_pattern = '-'
         new_pattern = '</li><br><li>'
         new_block = utils.replace_pattern(start_pattern,end_pattern,normal_pattern,new_pattern,block)
         return new_block
-        
-
-'''
-def HTML_sort(in_list):
-    out_list = []
-    if 'body' in  in_list:
-        in_list.pop('body')
-        out_list.append('body')
-'''        
+    
         
 def main():
-    #file_path = CommandParser()
-    file_path = "./test.txt"
+    file_path = utils.CommandParser()
+
     g=utils.FileParser(file_path)
     
     handler = HTML_handler()
     parser = TextParser(handler)
     candi = ['list','quote','code','head','br','url','title','body','file']
-    #candi = ['url','file']
+
     for typename in candi:
         new_rule = eval(typename+'_rules')
-        #if issubclass(new_rule,Rules):
+
         if callable(new_rule):
             rule  = new_rule(handler,g)
             parser.AddRule(rule)
         
     
     g = parser.Gen_file(g)
-    print g
+
     utils.Create_file(file_path,g)
-    #print g
-    
+
     
 if __name__ == '__main__':
     main()
-    
